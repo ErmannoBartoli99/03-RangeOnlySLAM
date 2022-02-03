@@ -11,13 +11,16 @@
 %
 %OUTPU
 % XL_guess: It is the vector of the landmark positions at the initial guess
-% associations: It is the matrix which contains the associations between pose_ids and landmarks_ids
-% Z: it is the vector of measures
-function [XL_guess, associations, Z] = initial_guess(XR_guess, id_first_pose, num_poses, observations, num_observations, num_landmarks)
+% associations(land and pose): It is the matrix which contains the associations between pose_ids and landmarks_ids
+% Zl: it is the vector of landmark measures
+% Zr: it is the vector of odometry measures
+function [XL_guess, land_associations, pose_associations, Zl, Zr] = initial_guess(XR_guess, id_first_pose, poses, num_poses, num_transitions ,observations, transitions, num_observations, num_landmarks)
     
     XL_guess = [];
-    associations = [];
-    Z = [];
+    land_associations = [];
+    pose_associations = [];
+    Zl = [];
+    Zr  = [];
     observations_matrix = ones(num_landmarks, num_poses)* -1;
     
     %We have to build a map from index to the id of the landmark
@@ -76,9 +79,18 @@ function [XL_guess, associations, Z] = initial_guess(XR_guess, id_first_pose, nu
         landmark_id = real_idx2land_id(l_idx);
         obs_range = observations_matrix(land_id2idx(landmark_id), p_idx);
         if obs_range != -1
-          Z(:,end+1) = obs_range;
-          associations(:,end+1) = [p_idx, l_idx];
+          Zl(:,end+1) = obs_range;
+          land_associations(:,end+1) = [p_idx, l_idx];
         endif
       endfor
     endfor
+
+    for p_idx = 1:num_transitions
+      pose_i = find([poses.id] == transitions(i).id_from);
+      pose_j = find([poses.id] == transitions(i).id_to);
+
+      pose_associations(:,end+1) = [pose_i; pose_j];
+      Zr(:, end+1) = [transitions(i).v(1); transitions(i).v(3)];
+    endfor
+
 endfunction

@@ -78,7 +78,7 @@ endif
 id_first_pose = poses(1).id;
 num_observations_ig = length(observations);
 num_poses_ig = length(poses);
-[XL_guess, associations, Z] = initial_guess(XR_guess, id_first_pose, num_poses_ig, observations, num_observations_ig, num_landmarks);
+[XL_guess, land_associations, pose_associations, Zl, Zr] = initial_guess(XR_guess, id_first_pose, poses, num_poses_ig, num_transitions,observations, transitions, num_observations_ig, num_landmarks);
 num_landmarks_ig = length(XL_guess);
 
 XL_true = positionLandmark_ground_truth(landmarks_ground_truth, num_landmarks);
@@ -87,10 +87,11 @@ if(debug_mode == 1)
 endif
 
 num_iterations = 10;
-damping = 0.0001;
+damping = 0.001;
 kernel_threshold = 1.0;
 
-[XR, XL, chi_stats, num_inliers] = least_squares(XR_guess, XL_guess, Z, associations, num_poses_ig, num_landmarks_ig, num_iterations, damping,kernel_threshold);
+[XR, XL, chi_stats_l, chi_stats_r, num_inliers] = least_squares(XR_guess, XL_guess, Zl, Zr, land_associations, pose_associations, ...
+                                     num_poses_ig, num_landmarks_ig, num_iterations, damping,kernel_threshold);
 
 
 
@@ -140,8 +141,14 @@ legend("Initial guess","Ground truth","LS optimization");
 
 figure(4);
 hold on;
-title("Chi evolution");
-plot(chi_stats);
+title("Chi evolution measurements");
+plot(chi_stats_l);
+
+figure(5);
+hold on;
+title("Chi evolution odometry");
+plot(chi_stats_r);
+
 
 if(debug_mode == 1)
     disp("Plots completed");
